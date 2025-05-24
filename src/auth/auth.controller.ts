@@ -25,7 +25,7 @@ export class AuthController {
       sameSite: 'strict',
       maxAge: 60 * 60 * 1000,
     });
-    return { message: 'Login successful' };
+    return { message: 'Login successful', access_token};
   }
 
   @UseGuards(JwtAuthGuard)
