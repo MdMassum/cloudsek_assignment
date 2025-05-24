@@ -6,9 +6,11 @@ import { SignupDto } from './dto/signup.dto';
 import { Response } from 'express';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 
 
 @ApiTags('auth')
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller('/api/v1/auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -41,6 +43,7 @@ export class AuthController {
     return { message: 'Login successful', access_token};
   }
 
+  @SkipThrottle()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   @ApiOperation({ summary: 'Get logged in user profile' })
