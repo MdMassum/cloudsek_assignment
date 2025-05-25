@@ -8,12 +8,13 @@ import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(getTypeOrmConfig()),
-    ThrottlerModule.forRoot({
+    ThrottlerModule.forRoot({  // rate - limiting
       throttlers: [
         {
           ttl: 60000,  // 20 req per minute to all routes
@@ -21,6 +22,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
         },
       ],
     }),
+    RedisModule,  // redis module
     AuthModule,
     UsersModule,
     PostsModule,
