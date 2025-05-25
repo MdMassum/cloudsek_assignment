@@ -1,98 +1,338 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend (Nestjs + TS + TypeOrm + Postgresql)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Table of Contents
+- [Project Overview](#project-overview)
+- [Backend Structure](#backend-structure)
+  - [Folder Description](#folder-description)
+- [API Endpoints Documentation](#api-endpoints-documentation)
+  - [Auth Routes](#auth-routes)
+  - [Users Routes](#users-routes)
+  - [Posts Routes](#posts-routes)
+  - [Comments Routes](#comments-routes)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Project Overview
 
-## Description
+This project is a robust backend API designed to manage posts, comments, and user authentication, along with efficient caching and a highly resilient architecture. Below is an outline of the key technologies and features implemented in this project:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Key Technologies Used
 
-## Project setup
+- **Node.js**: The runtime environment on which the backend is built.
+- **Nest.js**: Used to handle HTTP requests and routing.
+- **PostgreSQL**: The structured relational database used for storing posts and user data, with TypeORM.
+- **Redis**: Provides caching for posts & users.
+- **Type ORM**: A type-safe ORM for managing PostgreSQL database interactions.
+- **JWT**: Used for user authentication via access tokens.
+- **Passport**: Used as a middlewre for authentication with jwt.
+- **Throttler**: Used for rate limiting the routes.
 
-```bash
-$ npm install
+
+## Features and Functionality
+
+### 1. **Caching with Redis**
+   - Posts are cached using Redis, with pagination handled via the Redis cache keys, and cache invalidation is done on post creation or updates.
+
+### 2. **Pagination and Post Management**
+   - Posts are retrieved with pagination support, and Redis cache is used for faster retrieval. The `id` field in posts is used for caching, ensuring efficient access.
+
+### 3. **Authentication and Security**
+   - The API uses **NestJS Guards** in combination with **Passport** and **JWT** for secure and modular authentication.
+   - Access tokens are generated using JWT and are required for accessing protected routes.
+   - **Role-Based Access Control (RBAC)** is implemented using custom decorators and guards to restrict routes based on user roles (e.g., admin, user).
+   - **Rate Limiting** is enforced globally using **NestJS's @nestjs/throttler** module to prevent abuse and brute-force attacks and for auth routes stricter rate limit is applied.
+   - Custom exception filters provide standardized error responses for common cases like unauthorized access, invalid credentials, and resource not found.
+
+### 4. **Database Management**
+   - **PostgreSQL** is used for structured data storage, especially for posts and user-related data. TypeORM is utilized to manage database queries in a type-safe manner.
+
+### 5. **Retry Mechanism**
+   - The application has a resilient architecture with retry mechanisms for Redis and PostgreSQL connections to ensure high availability and fault tolerance.
+
+### 6. **Clean Coding Practices**
+   - The project follows clean code principles with a structured folder architecture to enhance maintainability.
+
+### 7. **API Documentation with Swagger**
+   - The project includes Swagger integration for API testing and documentation. Once the application is running, you can access Swagger at:
+
+    `http://localhost:3000/swagger`                             - Local Endpoint for swagger
+    `https://cloudsek-assignment.onrender.com/swagger`          - Deployed Endpoint for swagger
+
+
+## APIs Overview
+
+The API supports CRUD operations for **posts**, **comments**, and **user authentication**, with capabilities like creating posts, adding comments, managing replies, and authenticating users. The API ensures seamless user experience with features such as:
+
+- **User Authentication**: Register, login, logout.
+- **Posts Management**: Create, retrieve, update, and delete posts, with caching and pagination.
+- **Comments Management**: Create, update, and delete comments or replies on posts.
+- **Error Handling**: Structured error responses with appropriate HTTP status codes for common errors like authentication failure and resource not found.
+
+
+## Backend Structure
+
+Below is the folder structure of the project:
+
+```plaintext
+
+├── src
+    ├── auth
+    │   ├── auth.controller.ts
+    │   ├── auth.module.ts
+    │   ├── auth.service.ts
+    │   ├── dto
+    │   │   ├── login.dto.ts
+    │   │   └── signup.dto.ts
+    │   ├── guards
+    │   │   ├── jwt-auth.guard.ts
+    │   │   └── local-auth.guard.ts
+    │   ├── jwt.strategy.ts
+    │   └── local.strategy.ts
+    ├── comments
+    │   ├── comment.controller.ts
+    │   ├── comments.module.ts
+    │   ├── comments.service.ts
+    │   ├── dto
+    │   │   ├── create-comment.dto.ts
+    │   │   └── update-comment.dto.ts
+    │   └── entities
+    │   │   └── comment.entity.ts
+    ├── common
+    │   ├── decorators
+    │   │   ├── role.decorator.ts
+    │   │   └── user.decorator.ts
+    │   ├── guards
+    │   │   ├── jwt-auth.guard.ts
+    │   │   └── role.guard.ts
+    │   └── interfaces
+    │   │   └── pagination.interface.ts
+    ├── config
+    │   ├── data-source.ts
+    │   ├── swagger.ts
+    │   └── typeorm.config.ts
+    ├── posts
+    │   ├── dto
+    │   │   ├── create-post.dto.ts
+    │   │   └── update-post.dto.ts
+    │   ├── entities
+    │   │   └── post.entity.ts
+    │   ├── posts.controller.ts
+    │   ├── posts.module.ts
+    │   └── posts.service.ts
+    ├── redis
+    │   ├── redis.module.ts
+    │   └── redis.service.ts
+    └── users
+    │   ├── dto
+    │       ├── create-user.dto.ts
+    │       ├── update-role.dto.ts
+    │       └── update-user.dto.ts
+    │   ├── entities
+    │       └── user.entity.ts
+    │   ├── users.controller.ts
+    │   ├── users.module.ts
+    │   └── users.service.ts
+    ├── app.module.ts
+    ├── main.ts
+├── test
+    ├── app.e2e-spec.ts
+    └── jest-e2e.json
+├── .gitignore
+├── .prettierrc
+├── eslint.config.mjs
+├── nest-cli.json
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.build.json
+├── tsconfig.json
 ```
 
-## Compile and run the project
+## Folder Description
+Below is the folder structure of the backend NestJS application. The source code is organized in a modular way to promote scalability, maintainability, and readability.
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+### 1. **`src/`**  
+The main source directory where all the core application logic is defined, following NestJS’s modular structure. It includes modules for features like authentication, posts, comments, and users, as well as shared configuration, guards, and decorators.
 
-# production mode
-$ npm run start:prod
-```
+---
 
-## Run tests
+#### 1.1 **`auth/`**  
+Handles all authentication and authorization functionalities using NestJS guards, strategies, and Passport.
 
-```bash
-# unit tests
-$ npm run test
+- `auth.controller.ts`: Defines routes for login and signup.
+- `auth.module.ts`: Wraps all authentication-related providers and controllers.
+- `auth.service.ts`: Contains the core logic for validating users and issuing tokens.
+- `dto/`: DTOs for login and signup requests.
+  - `login.dto.ts`: Data Transfer Object for user login.
+  - `signup.dto.ts`: Data Transfer Object for user registration.
+- `guards/`: Custom guards using Passport strategies.
+  - `jwt-auth.guard.ts`: Guard to protect routes using JWT.
+  - `local-auth.guard.ts`: Guard to handle local authentication (username/password).
+- `jwt.strategy.ts`: Strategy to handle JWT validation logic.
+- `local.strategy.ts`: Strategy for local authentication logic.
 
-# e2e tests
-$ npm run test:e2e
+---
 
-# test coverage
-$ npm run test:cov
-```
+#### 1.2 **`comments/`**  
+Manages CRUD operations for comments.
 
-## Deployment
+- `comment.controller.ts`: Handles HTTP endpoints for creating and managing comments.
+- `comments.module.ts`: Module wrapper for the comments feature.
+- `comments.service.ts`: Business logic for comments.
+- `dto/`: DTOs for comment operations.
+  - `create-comment.dto.ts`: Defines the shape of data required to create a comment.
+  - `update-comment.dto.ts`: Defines the shape for updating a comment.
+- `entities/`: TypeORM entities for comments.
+  - `comment.entity.ts`: Defines the Comment entity schema.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+#### 1.3 **`common/`**  
+Holds shared logic, decorators, and guards used across modules.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+- `decorators/`: Custom decorators.
+  - `role.decorator.ts`: Extracts role metadata for access control.
+  - `user.decorator.ts`: Extracts user info from request object.
+- `guards/`: Global or shared guards.
+  - `jwt-auth.guard.ts`: (alternative or extended guard used globally).
+  - `role.guard.ts`: Role-based access guard.
+- `interfaces/`: Shared interfaces across the app.
+  - `pagination.interface.ts`: Defines structure for pagination parameters and response.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+#### 1.4 **`config/`**  
+Centralized configuration files.
 
-Check out a few resources that may come in handy when working with NestJS:
+- `typeorm.config.ts`: Configures and initializes the database connection with TypeORM.
+- `swagger.ts`: Swagger (OpenAPI) configuration for API documentation.
+- `data-source.ts`: Configuration for datasource.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+#### 1.5 **`posts/`**  
+Handles post creation, update, deletion, and retrieval.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- `posts.controller.ts`: Routes related to posts.
+- `posts.module.ts`: Feature module for posts.
+- `posts.service.ts`: Business logic for interacting with the post entity.
+- `dto/`: DTOs for creating/updating posts.
+  - `create-post.dto.ts`: Payload format for creating posts.
+  - `update-post.dto.ts`: Payload format for updating posts.
+- `entities/`: Post entity for TypeORM.
+  - `post.entity.ts`: Defines Post schema.
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### 1.6 **`redis/`**  
+Encapsulates Redis configuration and utilities for caching or rate-limiting.
 
-## License
+- `redis.module.ts`: Provides Redis client across the app.
+- `redis.service.ts`: Configuration & Methods for interacting with Redis (e.g., set, get, delete).
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+
+#### 1.7 **`users/`**  
+Manages user, profile updates, and role assignment.
+
+- `users.controller.ts`: Handles endpoints for user operations.
+- `users.module.ts`: NestJS module for the user feature.
+- `users.service.ts`: Business logic for users.
+- `dto/`: DTOs for user-related operations.
+  - `create-user.dto.ts`: Data for creating a new user.
+  - `update-user.dto.ts`: Data for updating user info.
+  - `update-role.dto.ts`: Payload for updating user roles.
+- `entities/`: User entity for TypeORM.
+  - `user.entity.ts`: Defines the User table schema.
+
+---
+
+#### 1.8 **`app.module.ts`**  
+The root module that imports all feature modules and sets up global configuration like throttling, caching, etc.
+
+---
+
+#### 1.9 **`main.ts`**  
+The entry point of the application that bootstraps the NestJS app and applies global middlewares, pipes, and configurations.
+
+---
+
+### 2. **`test/`**  
+Contains end-to-end (e2e) tests and related configurations.
+
+- `app.e2e-spec.ts`: E2E test cases for validating application endpoints.
+- `jest-e2e.json`: Jest config specific to e2e testing.
+
+---
+
+### 3. **Root Files**
+
+- **`.gitignore`** – Specifies files/folders to be ignored by Git.
+- **`.prettierrc`** – Prettier configuration for code formatting.
+- **`eslint.config.mjs`** – ESLint rules for maintaining consistent code style.
+- **`nest-cli.json`** – NestJS CLI project configuration.
+- **`package.json` / `package-lock.json`** – Project dependencies and scripts.
+- **`tsconfig.json` / `tsconfig.build.json`** – TypeScript compiler configurations.
+- **`README.md`** – Documentation and overview of the project.
+
+---
+
+## API Endpoints Documentation
+
+`http://localhost:3000/api/v1` - for local development
+`https://cloudsek-assignment.onrender.com/api/v1`  - for deployed link
+
+### Auth Routes
+
+Base URL: `/auth`
+
+| Method | Endpoint           | Description                    |
+|--------|--------------------|--------------------------------|
+| POST   | `/signup`          | Registers a new user           |
+| POST   | `/login`           | Logs in an existing user       |
+| POST   | `/logout`          | Logs out the authenticated user|
+| GET    | `/profile`         | Get my profile                 |
+| PUT    | `/change-password` | Changes Password               |
+
+---
+
+### Users Routes
+
+Base URL: `/users`  (All this routes are authenticated)
+
+| Method | Endpoint           | Description                    |
+|--------|--------------------|--------------------------------|
+| GET    | `/`                | Get all users (ADMIN ROUTE)    |
+| GET    | `/:id`             | Get single user by Id          |
+| PATCH  | `/role/update/:id` | Update Role  (ADMIN ROUTE)     |
+| DELETE | `/:id`             | Delete User By id(ADMIN ROUTE) |
+
+---
+
+### Posts Routes
+
+Base URL: `/posts`   (All this routes are authenticated)
+
+| Method | Endpoint       | Description                         |
+|--------|----------------|-------------------------------------|
+| GET    | `/`            | Retrieves all posts                 |
+| GET    | `/:id`         | Retrieves a specific post by ID     |
+| GET    | `/me`          | Retrieves my all posts              |
+| POST   | `/create`      | Creates a new post                  |
+| PUT    | `/:id`         | Updates an existing post by ID      |
+| DELETE | `/:id`         | Deletes a post by ID                |
+
+---
+
+### Comments Routes
+
+Base URL: `/comments`   (All this routes are authenticated)
+
+| Method | Endpoint       | Description                         |
+|--------|----------------|-------------------------------------|
+| GET    | `/:id`         | Retrieves comment by ID             |
+| POST   | `/new/:postId` | Add new comment on post             |
+| PUT    | `/:id`         | Updates my comment                  |
+| DELETE | `/:id`         | Deletes my comment                  |
+
+---
