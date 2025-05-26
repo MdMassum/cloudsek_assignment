@@ -1,7 +1,8 @@
-# Backend (Nestjs + TS + TypeOrm + Postgresql)
+# Backend (Nestjs + TS + TypeOrm + Postgresql + Kafka)
 
 ## Table of Contents
 - [Project Overview](#project-overview)
+- [Project Setup On Local](#project-setup-on-local)
 - [Backend Structure](#backend-structure)
   - [Folder Description](#folder-description)
 - [API Endpoints Documentation](#api-endpoints-documentation)
@@ -12,7 +13,7 @@
 
 ## Project Overview
 
-This project is a robust backend API designed to manage posts, comments, and user authentication, along with efficient caching and a highly resilient architecture. Below is an outline of the key technologies and features implemented in this project:
+This project is a robust backend API designed to manage posts, comments, and user authentication, along with efficient caching and a highly resilient architecture.I have also implemented realtime Notification system using **Socket.io** and **Kafka** for new, update or delete post and new comment. Below is an outline of the key technologies and features implemented in this project:
 
 ## Key Technologies Used
 
@@ -24,6 +25,8 @@ This project is a robust backend API designed to manage posts, comments, and use
 - **JWT**: Used for user authentication via access tokens.
 - **Passport**: Used as a middlewre for authentication with jwt.
 - **Throttler**: Used for rate limiting the routes.
+- **Socket.io**: Enables real-time, bidirectional communication between the server and clients for instant notifications.
+- **kafka**: Acts as a message broker to ensure scalable and reliable event streaming, which then triggers real-time updates via Socket.io.
 
 
 ## Features and Functionality
@@ -31,30 +34,101 @@ This project is a robust backend API designed to manage posts, comments, and use
 ### 1. **Caching with Redis**
    - Posts are cached using Redis, with pagination handled via the Redis cache keys, and cache invalidation is done on post creation or updates.
 
-### 2. **Pagination and Post Management**
+### 2. **Real-time Notifications with Kafka and Socket.io**
+   - Contains Kafka Producer and Consumer logic to handle real-time events.
+   - Whenever a post is created, updated, deleted, or a comment is added to a post, the Kafka Producer sends a message payload to a specific topic.
+   - The Kafka Consumer listens to this topic, processes the event, and forwards a real-time notification to the post owner via Socket.io.
+
+### 3. **Pagination and Post Management**
    - Posts are retrieved with pagination support, and Redis cache is used for faster retrieval. The `id` field in posts is used for caching, ensuring efficient access.
 
-### 3. **Authentication and Security**
+### 4. **Authentication and Security**
    - The API uses **NestJS Guards** in combination with **Passport** and **JWT** for secure and modular authentication.
    - Access tokens are generated using JWT and are required for accessing protected routes.
    - **Role-Based Access Control (RBAC)** is implemented using custom decorators and guards to restrict routes based on user roles (e.g., admin, user).
    - **Rate Limiting** is enforced globally using **NestJS's @nestjs/throttler** module to prevent abuse and brute-force attacks and for auth routes stricter rate limit is applied.
    - Custom exception filters provide standardized error responses for common cases like unauthorized access, invalid credentials, and resource not found.
 
-### 4. **Database Management**
+### 5. **Database Management**
    - **PostgreSQL** is used for structured data storage, especially for posts and user-related data. TypeORM is utilized to manage database queries in a type-safe manner.
 
-### 5. **Retry Mechanism**
+### 6. **Retry Mechanism**
    - The application has a resilient architecture with retry mechanisms for Redis and PostgreSQL connections to ensure high availability and fault tolerance.
 
-### 6. **Clean Coding Practices**
+### 7. **Clean Coding Practices**
    - The project follows clean code principles with a structured folder architecture to enhance maintainability.
 
-### 7. **API Documentation with Swagger**
+### 8. **API Documentation with Swagger**
    - The project includes Swagger integration for API testing and documentation. Once the application is running, you can access Swagger at:
 
-    `http://localhost:3000/swagger`                             - Local Endpoint for swagger
-    `https://cloudsek-assignment.onrender.com/swagger`          - Deployed Endpoint for swagger
+    - `http://localhost:3000/swagger`                             - Local Endpoint for swagger
+    - `https://cloudsek-assignment.onrender.com/swagger`          - Deployed Endpoint for swagger
+
+
+## Project Setup On Local
+This project is a NestJS-based application that uses:
+
+- **PostgreSQL** for database
+- **Redis** for caching
+- **Kafka** for message brokering
+- **Docker Compose** for container orchestration
+
+---
+
+## Prerequisites
+Make sure you have the following installed:
+
+- [Docker](https://www.docker.com/products/docker-desktop/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git https://github.com/MdMassum/cloudsek_assignment/.git
+cd  cloudsek_assignment
+```
+
+### 2. Create .env File
+Create a .env file in the root directory and paste the following content:
+
+```plaintext
+
+PORT=3000
+DB_PORT=5432
+JWT_SECRET=<YOUR_SECRET_KEY>
+KAFKA_BROKER=kafka:9092
+DATABASE_URL=postgres://postgres:postgres@postgres:5432/myappdb
+REDIS_URL=redis://redis-stack:6379
+
+```
+
+### 3. Run with Docker Compose
+Build and run the app in detached mode:
+
+docker-compose up -d --build
+
+This will start the following services:
+  - nestjs-app: Your NestJS backend running on port 3000
+  - postgres: PostgreSQL running on port 5432
+  - redis: Redis running on port 6379
+  - kafka: Kafka broker running on port 9092
+  - zookeeper: Required by Kafka, running on port 2181
+
+
+### 4. Access the App
+Once the containers are up:
+
+ - Your NestJS app will be accessible at http://localhost:3000
+
+
+### 5. Stop the App
+To stop the containers:
+
+  - docker-compose down
 
 
 ## APIs Overview
@@ -106,8 +180,14 @@ Below is the folder structure of the project:
     │   │   └── pagination.interface.ts
     ├── config
     │   ├── data-source.ts
-    │   ├── swagger.ts
+    │   ├── kafka.config.ts
+    │   ├── socket.config.ts
+    │   ├── swagger.config.ts
     │   └── typeorm.config.ts
+    ├── kafka
+    │   ├── kafka-consumer.service.ts
+    │   ├── kafka-producer.service.ts
+    │   └── kafka.module.ts
     ├── posts
     │   ├── dto
     │   │   ├── create-post.dto.ts
@@ -132,11 +212,16 @@ Below is the folder structure of the project:
     │   └── users.service.ts
     ├── app.module.ts
     ├── main.ts
+├── env
+    ├── example.env
 ├── test
     ├── app.e2e-spec.ts
     └── jest-e2e.json
+├── .dockerignore
 ├── .gitignore
 ├── .prettierrc
+├── .docker-compose.yml
+├── .dockerfile
 ├── eslint.config.mjs
 ├── nest-cli.json
 ├── package-lock.json
@@ -205,12 +290,23 @@ Holds shared logic, decorators, and guards used across modules.
 Centralized configuration files.
 
 - `typeorm.config.ts`: Configures and initializes the database connection with TypeORM.
-- `swagger.ts`: Swagger (OpenAPI) configuration for API documentation.
-- `data-source.ts`: Configuration for datasource.
+- `swagger.config.ts`: Swagger (OpenAPI) configuration for API documentation.
+- `kafka.config.ts`  : Configuration for Kafka.
+- `socket.config.ts` : Socket.io Configuration.
+- `data-source.ts`   : Configuration for datasource.
 
 ---
 
-#### 1.5 **`posts/`**  
+#### 1.5 **`kafka/`**  
+Contains Kafka Producer and Consumer related logic.Whenever a post is created, updated, deleted or comment is added to post Producer sends message payload to consumer and the consumer further sends the notification to owner via socket.io.
+
+- `karka-consumer.service.ts`: Handles subscribing to Kafka topics and processing incoming messages from the broker.
+- `kafka-producer.service.ts`: Publishes messages to Kafka topics, typically triggered by post or comment creation / update events.
+- `kafka.module.ts`: Responsible for setting up and providing Kafka services (producer & consumer) within the NestJS module system.
+
+---
+
+#### 1.6 **`posts/`**  
 Handles post creation, update, deletion, and retrieval.
 
 - `posts.controller.ts`: Routes related to posts.
@@ -224,7 +320,7 @@ Handles post creation, update, deletion, and retrieval.
 
 ---
 
-#### 1.6 **`redis/`**  
+#### 1.7 **`redis/`**  
 Encapsulates Redis configuration and utilities for caching or rate-limiting.
 
 - `redis.module.ts`: Provides Redis client across the app.
@@ -232,7 +328,7 @@ Encapsulates Redis configuration and utilities for caching or rate-limiting.
 
 ---
 
-#### 1.7 **`users/`**  
+#### 1.8 **`users/`**  
 Manages user, profile updates, and role assignment.
 
 - `users.controller.ts`: Handles endpoints for user operations.
@@ -247,12 +343,12 @@ Manages user, profile updates, and role assignment.
 
 ---
 
-#### 1.8 **`app.module.ts`**  
+#### 1.9 **`app.module.ts`**  
 The root module that imports all feature modules and sets up global configuration like throttling, caching, etc.
 
 ---
 
-#### 1.9 **`main.ts`**  
+#### 1.10 **`main.ts`**  
 The entry point of the application that bootstraps the NestJS app and applies global middlewares, pipes, and configurations.
 
 ---
@@ -274,6 +370,8 @@ Contains end-to-end (e2e) tests and related configurations.
 - **`package.json` / `package-lock.json`** – Project dependencies and scripts.
 - **`tsconfig.json` / `tsconfig.build.json`** – TypeScript compiler configurations.
 - **`README.md`** – Documentation and overview of the project.
+- **`docker-compose.yml`** – Defines and orchestrates multi-container Docker services including NestJS, PostgreSQL, Redis, Kafka, and Zookeeper.
+- **`dockerfile`** –  Contains instructions to build the Docker image for the NestJS backend application.
 
 ---
 
