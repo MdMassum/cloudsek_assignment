@@ -2,7 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
-import { setupSwagger } from './config/swagger';
+import { setupSwagger } from './config/swagger.config';
+import { setupSocket } from './config/socket.config';
 
 async function bootstrap() {
 
@@ -10,7 +11,12 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform:true }));
   app.use(cookieParser());
   setupSwagger(app);
-  await app.listen(process.env.PORT ?? 3000);
-
+  app.enableCors();
+  const server = setupSocket(app);  // socket server
+  await app.init();
+  const PORT = process.env.PORT
+  server.listen(PORT || 3000,()=>{
+    console.log(`Server running on http://localhost:${PORT || 3000}`);
+  });
 }
 bootstrap();

@@ -5,6 +5,7 @@ import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { Post } from 'src/posts/entities/post.entity';
+import { KafkaProducerService } from 'src/kafka/kafka-producer.service';
 
 @Injectable()
 export class CommentService {
@@ -14,7 +15,9 @@ export class CommentService {
     private commentRepo: Repository<Comment>,
 
     @InjectRepository(Post)
-    private postRepo: Repository<Post>
+    private postRepo: Repository<Post>,
+
+    private kafkaProducerService:KafkaProducerService
   ) {}
 
 
@@ -28,6 +31,16 @@ export class CommentService {
     const comment = this.commentRepo.create({
       ...dto,
       authorId: userId,
+    });
+
+    // Notify author that new comment is added
+    await this.kafkaProducerService.sendMessage('notify-user', {
+      userId:post.authorId,   // to post author
+      content: {
+        type: 'new-comment',
+        message: `New comment on your post: "${post.title}"`,
+        postId: post.id,
+      },
     });
 
     return this.commentRepo.save(comment);

@@ -9,7 +9,6 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => ({
   url: process.env.DATABASE_URL,
   entities: [User,Post,Comment],
   synchronize: true,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+
 });

@@ -9,6 +9,7 @@ import { CommentsModule } from './comments/comments.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { RedisModule } from './redis/redis.module';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RedisModule } from './redis/redis.module';
       ],
     }),
     RedisModule,  // redis module
+    KafkaModule,
     AuthModule,
     UsersModule,
     PostsModule,

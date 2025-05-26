@@ -6,6 +6,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { IPaginationOptions, IPaginationResult } from 'src/common/interfaces/pagination.interface';
 import { RedisService } from 'src/redis/redis.service';
+import { KafkaProducerService } from 'src/kafka/kafka-producer.service';
 
 @Injectable()
 export class PostService {
@@ -13,6 +14,7 @@ export class PostService {
     @InjectRepository(Post)
     private postRepo: Repository<Post>,
     private redisService: RedisService,
+    private kafkaProducerService:KafkaProducerService
   ) {}
 
   // create post service
@@ -24,6 +26,16 @@ export class PostService {
     // invalidating pagination cache
     await this.redisService.delPattern(`posts:*`);
     await this.redisService.delPattern(`myposts:user=${userId}:*`);
+
+    // Notify author that post is created
+    await this.kafkaProducerService.sendMessage('notify-user', {
+      userId, 
+      content: {
+        type: 'post',
+        message: `New post created: "${post.title}"`,
+        postId: post.id,
+      },
+    });
 
     return saved;
   }
@@ -101,6 +113,16 @@ export class PostService {
     await this.redisService.delPattern(`posts:*`);
     await this.redisService.delPattern(`myposts:user=${userId}:*`);
 
+    // Notify author that post has been updated
+    await this.kafkaProducerService.sendMessage('notify-user', {
+      userId, 
+      content: {
+        type: 'post-update',
+        message: `Post has been Updated: "${post.title}"`,
+        postId: post.id,
+      },
+    });
+
     const updatedpost = await this.findOne(id);
 
     return {success:true, message:"post updated successfully",post:updatedpost}
@@ -121,6 +143,15 @@ export class PostService {
     await this.redisService.del(`post:${id}`);   
     await this.redisService.delPattern(`posts:*`);
     await this.redisService.delPattern(`myposts:user=${userId}:*`);
+
+    // Notify author that post has been updated
+    await this.kafkaProducerService.sendMessage('notify-user', {
+      userId, 
+      content: {
+        type: 'post-delete',
+        message: `${post.title} Post has been Deleted Successfully"`,
+      },
+    });
 
     return { success: true, message: 'Post deleted successfully' };
   }
