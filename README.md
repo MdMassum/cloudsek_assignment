@@ -88,7 +88,7 @@ Make sure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git https://github.com/MdMassum/cloudsek_assignment/.git
+git clone https://github.com/MdMassum/cloudsek_assignment.git 
 cd  cloudsek_assignment
 ```
 
